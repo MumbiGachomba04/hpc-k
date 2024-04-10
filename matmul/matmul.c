@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-void MatMul (int n, int ts, double** a, double** b, double** c) // IKJ
+#ifndef REAL
+#define REAL double
+#endif
+
+void MatMul (int n, int ts, REAL** a, REAL** b, REAL** c) // IKJ
 {
    int ii, jj, kk, i, j, k;
 
@@ -24,11 +28,11 @@ void usage(int argc, char *argv[]){
 int main(int argc, char *argv[])
 {
    int n, ts;
-   double **A, **B, **C;
+   REAL **A, **B, **C;
    int i=0, j=0;
    struct timeval tv1, tv2;
    struct timezone tz;
-   double elapsed;
+   REAL elapsed;
 
    if (argc != 3) {
       printf("Error: parsing command line arguments.\n");
@@ -47,24 +51,24 @@ int main(int argc, char *argv[])
    printf("Square tiled matrix multiplication: C=A*B.\n");
    printf("Matrix size: %dx%d. Tile size: %dx%d.\n", n, n, ts, ts);
    ///////////////////// Matrix A //////////////////////////
-   A = (double **) malloc(n*sizeof(double *));
-   A[0] = (double *) malloc(n*n*sizeof(double));
+   A = (REAL **) malloc(n*sizeof(REAL *));
+   A[0] = (REAL *) malloc(n*n*sizeof(REAL));
    if(!A || !A[0]) {
       printf("Error: memory failed allocating Matrix A.\n");
       exit(EXIT_FAILURE);
    }
    for(i=1; i<n; i++) A[i] = A[0]+i*n;
    ///////////////////// Matrix B //////////////////////////
-   B = (double **) malloc(n*sizeof(double *));
-   B[0] = (double *) malloc(n*n*sizeof(double));
+   B = (REAL **) malloc(n*sizeof(REAL *));
+   B[0] = (REAL *) malloc(n*n*sizeof(REAL));
    if(!B || !B[0]) {
       printf("Error: memory failed allocating Matrix B.\n");
       exit(EXIT_FAILURE);
    }
    for(i=1; i<n; i++) B[i] = B[0]+i*n;
    ///////////////////// Matrix C //////////////////////////
-   C = (double **) malloc(n*sizeof(double *));
-   C[0] = (double *) malloc(n*n*sizeof(double));
+   C = (REAL **) malloc(n*sizeof(REAL *));
+   C[0] = (REAL *) malloc(n*n*sizeof(REAL));
    if(!C || !C[0]) {
       printf("Error: memory failed allocating Matrix C.\n");
       exit(EXIT_FAILURE);
@@ -81,7 +85,7 @@ int main(int argc, char *argv[])
    gettimeofday(&tv1, &tz);
    MatMul(n,ts,A,B,C);
    gettimeofday(&tv2, &tz);
-   elapsed += (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+   elapsed += (REAL) (tv2.tv_sec-tv1.tv_sec) + (REAL) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
    printf("Compute time = %lf seconds.\n",elapsed);
    /////////////////// Deallocating ////////////////////////
    free(A[0]); free(A);

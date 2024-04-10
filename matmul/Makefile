@@ -3,7 +3,7 @@ PROGRAM=matmul
 CC=gcc
 RM=rm -fr
 
-CFLAGS=-O3
+CFLAGS=-O3 -DREAL=float
 LDFLAGS=
 
 .PHONY: clean
