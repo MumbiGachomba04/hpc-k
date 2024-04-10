@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#ifndef __OPENMP
+#ifndef _OPENMP
 #define omp_get_max_threads() 1
 #define omp_get_num_threads() 1
 #define omp_get_thread_num()  0
