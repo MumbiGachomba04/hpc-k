@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <math.h>
 
 #ifndef _OPENMP
 #define omp_get_max_threads() 1
@@ -12,7 +13,22 @@
 #define REAL double
 #endif
 
-void MatMul (int n, int ts, REAL** a, REAL** b, REAL** c) // IKJ
+#define A_INIT (REAL) (101.101/17)
+#define B_INIT (REAL) (202.202/13)
+#define C_INIT (REAL) 0.0
+
+// Arithmetic solution computes the result via formula.
+// Otherwise, it uses an algorithmic approac reproducing the
+// sequential set of multiplications and additions.
+//#define USE_ARITHMETIC_SOLUTION
+
+#ifdef USE_ARITHMETIC_SOLUTION
+#  define EPSILON 1E-3
+#else
+#  define EPSILON 1E-3
+#endif
+
+void MatMul (int n, int ts, REAL **a, REAL **b, REAL **c) // IKJ
 {
    int ii, jj, kk, i, j, k;
 
@@ -93,9 +109,9 @@ int main(int argc, char *argv[])
    /////////////////// Initializing ////////////////////////
    for(i=0; i<n; i++)
       for(j=0; j<n; j++) {
-         A[i][j] = 1.0;
-         B[i][j] = 2.0;
-         C[i][j] = 0.0;
+         A[i][j] = A_INIT;
+         B[i][j] = B_INIT;
+         C[i][j] = C_INIT;
       }
    gettimeofday(&tv2, &tz);
    initialize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
@@ -104,19 +120,41 @@ int main(int argc, char *argv[])
    MatMul(n,ts,A,B,C);
    gettimeofday(&tv2, &tz);
    kernel_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
-   /////////////////// Deallocating ////////////////////////
+   ////////////////// Verification /////////////////////////
    gettimeofday(&tv1, &tz);
+   double abs_err = 0.0, rel_err = 0.0;
+
+#ifdef USE_ARITHMETIC_SOL
+   REAL expected = C_INIT+N*A_INIT*B_INIT; // Arithmetic solution (real)
+#else // algorithmic solution
+   REAL expected = C_INIT;
+   for(i=0; i<n; i++) expected += A_INIT * B_INIT; // Algorithmic solution (sequential)
+#endif
+
+   for(i=0; i<n; i++)
+      for(j=0; j<n; j++) {
+         abs_err += fabs(C[i][j] - expected);
+      }
+
+   abs_err = abs_err / (N * N);
+   rel_err = abs_err / expected;
+
+   ////////////////// Deallocating /////////////////////////
    free(A[0]); free(A);
    free(B[0]); free(B);
    free(C[0]); free(C);
    gettimeofday(&tv2, &tz);
    finalize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+   ////////////////// Print results ////////////////////////
    printf("%-30s: %.3lf\n", "Initialization time (seconds)", initialize_time);
    printf("%-30s: %.3lf\n", "Kernel compute time (seconds)", kernel_time);
    printf("%-30s: %.3lf\n", "Kernel throughput (GFLOPs/s)", ((N*N*N*2)/kernel_time) / 1E+9);
    printf("%-30s: %.3lf\n", "Finalization time (seconds)", finalize_time);
+   printf("%-30s: %.4lf\n", "Expected result", expected);
+   printf("%-30s: %.6lf\n", "Mean absolut error", abs_err);
+   printf("%-30s: %.6lf\n", "Relative error", rel_err);
+   printf("%-30s: %s\n", "Result verification", rel_err < EPSILON?"pass":"fail");
    printf("================================================================\n");
    ////////////////////// EXIT ////////////////////////////
    return EXIT_SUCCESS;
-
 }
