@@ -12,10 +12,13 @@ LIB=
 
 default: $(PROGRAM)
 
-$(PROGRAM): $(PROGRAM).o
-	$(CC) $< $(CFLAGS) $(LDFLAGS) $(LIB) -o $@ 
+$(PROGRAM): $(PROGRAM).o main.o
+	$(CC) $^ $(CFLAGS) $(LDFLAGS) $(LIB) -o $@ 
 
 $(PROGRAM).o: $(PROGRAM).c
+	$(CC) -c $< $(CFLAGS) $(INC) -o $@
+
+main.o: main.c
 	$(CC) -c $< $(CFLAGS) $(INC) -o $@
 
 clean:
