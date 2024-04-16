@@ -3,7 +3,7 @@ PROGRAM=axpy
 CC=gcc
 RM=rm -fr
 
-CFLAGS=-O3 -DREAL=float
+CFLAGS=-O3 -DREAL=float -Wall
 LDFLAGS=
 INC=
 LIB=

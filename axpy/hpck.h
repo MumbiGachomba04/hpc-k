@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <stdarg.h>
 
 #ifndef _OPENMP
 #define omp_get_max_threads() 1
@@ -14,14 +15,19 @@
 #define REAL double
 #endif
 
-#define A_INIT (REAL) (11.11/13)
-#define X_INIT (REAL) (22.22/23)
-#define Y_INIT (REAL) (11.11/43)
+#ifndef INTEGER
+#define INTEGER long
+#endif
 
-#define EPSILON 1E-3
-
-void * hpck_initialize (int, char *[]);
+void*hpck_initialize(int, char *[]);
 void hpck_kernel(void *);
-char hpck_finalize(void *);
+int  hpck_finalize(void *);
+
+void hpck_print_usage(int, char *[]);
+
+void hpck_print_rule(void);
+void hpck_print_header(const char*);
+void hpck_print_settings(const char*, const char*, ... );
+void hpck_print_results(const char*, const char*, ... );
 
 #endif

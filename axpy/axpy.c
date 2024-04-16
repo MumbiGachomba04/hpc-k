@@ -5,9 +5,9 @@
 #define X_INIT (REAL) (22.22/23)
 #define Y_INIT (REAL) (11.11/43)
 
-#define EPSILON 1E-3
+#define EPSILON 1E-03
 
-typedef struct args_s{
+typedef struct {
    long n;
    long reps;
    REAL alpha;
@@ -15,44 +15,34 @@ typedef struct args_s{
    REAL *Y;
 } args_t;
 
-
-void hpck_kernel (void *a)
+void hpck_kernel (void *args)
 {
-   args_t *args = (args_t *) a;
-   long n = args->n;
-   long reps = args->reps;
-   REAL alpha = args->alpha;
-   REAL *X = args->X;
-   REAL *Y = args->Y;
+   long n     = ((args_t*)args)->n;
+   long reps  = ((args_t*)args)->reps;
+   REAL alpha = ((args_t*)args)->alpha;
+   REAL *X    = ((args_t*)args)->X;
+   REAL *Y    = ((args_t*)args)->Y;
 
-   long r, i;
-
-   for(r=0; r<reps; r++)
-      for(i=0; i<n; i++)
+   for(long r=0; r<reps; r++)
+      for(long i=0; i<n; i++)
          Y[i] = alpha*X[i]+Y[i];
-
 }
 
 void * hpck_initialize(int argc, char *argv[])
 {
-   args_t *args = (args_t *) malloc(sizeof(args_t));
+   hpck_print_header ("AXPY Kernel: Y=a*X+Y");
 
-   int i=0, j=0;
+   args_t *args = (args_t *) malloc(sizeof(args_t));
 
    if (argc != 3) {
       printf("Error: parsing command line arguments.\n");
-      usage(argc, argv);
+      hpck_print_usage(argc, argv);
       exit(EXIT_FAILURE);
    }
 
-   args->n  = atoi(argv[1]);
+   args->n = atoi(argv[1]);
    args->reps = atoi(argv[2]);
-
-   printf("================================================================\n");
-   printf("= %-60s =\n", "AXPY Kernel: Y=a*X+Y");
-   printf("================================================================\n");
-   //printf("%-30s: %s\n", "Compiler", HPCK_Compiler );
-
+   args->alpha = A_INIT;
 
    ////////////////////// Array X ///////////////////////////
    args->X = (REAL *) malloc(args->n*sizeof(REAL));
@@ -66,47 +56,45 @@ void * hpck_initialize(int argc, char *argv[])
       printf("Error: memory failed allocating Array Y.\n");
       exit(EXIT_FAILURE);
    }
-   /////////////////// Initializing ////////////////////////
-   for(i=0; i<args->n; i++) {
-         args->X[i] = X_INIT;
-         args->Y[i] = Y_INIT;
-      }
+   ///////////////////// Initialize /////////////////////////
+   for(int i=0; i<args->n; i++) {
+      args->X[i] = X_INIT;
+      args->Y[i] = Y_INIT;
+   }
 
-   args->alpha = A_INIT;
+   hpck_print_settings("Array size (elements)", "%ld", args->n);
+   hpck_print_settings("Repetitions", "%ld", args->reps);
+   hpck_print_settings("Element size (bytes)","%ld", sizeof(REAL));
+   hpck_print_settings("Number of threads","%d", omp_get_max_threads());
 
-   printf("%-30s: %ld\n", "Array size (elements)", args->n);
-   printf("%-30s: %ld\n", "Repetitions", args->reps);
-   printf("%-30s: %ld\n", "Element size (bytes)", sizeof(REAL));
-   printf("%-30s: %d\n", "Number of threads", omp_get_max_threads());
-   printf("----------------------------------------------------------------\n");
-
-   return args;
+   return (void *) args;
 }
 
-char hpck_finalize(void *a){
-   args_t *args = (args_t *) a;
-   long n = args->n;
-   long reps = args->reps;
-   REAL alpha = args->alpha;
-   REAL *X = args->X;
-   REAL *Y = args->Y;
+int hpck_finalize(void *args)
+{
+   long n     = ((args_t*)args)->n;
+   long reps  = ((args_t*)args)->reps;
+   REAL *X    = ((args_t*)args)->X;
+   REAL *Y    = ((args_t*)args)->Y;
 
-   int i;
-   REAL N = (REAL) n;
    double abs_err = 0.0, rel_err = 0.0;
 
    REAL expected = Y_INIT;
-   for(i=0; i<reps; i++) expected = A_INIT*X_INIT+expected; // Algorithmic solution (sequential)
+   for(int i=0; i<reps; i++) expected = A_INIT*X_INIT+expected; // Algorithmic solution (sequential)
 
-   for(i=0; i<n; i++)
+   for(int i=0; i<n; i++)
          abs_err += fabs(Y[i] - expected);
 
-   abs_err = abs_err / N;
+   abs_err = abs_err / (REAL) n;
    rel_err = abs_err / expected;
 
    ////////////////// Deallocating /////////////////////////
    free(X);
    free(Y);
 
-   return rel_err < EPSILON?1:-1;
+   hpck_print_results("Expected result", "%.6lf", expected);
+   hpck_print_results("Mean absolut error", "%.6lf", abs_err);
+   hpck_print_results("Relative error", "%.6lf", rel_err);
+
+   return rel_err<EPSILON?1:-1;
 }
