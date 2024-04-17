@@ -7,6 +7,13 @@
 
 #define EPSILON 1E-03
 
+char *hpck_kernel_name="AXPY Kernel: Y=a*X+Y";
+
+char  hpck_kernel_args_count = 2;
+char *hpck_kernel_args_key[] = {NULL};
+char *hpck_kernel_args_desc[] = {"Array size","Repetitions"};
+char  hpck_kernel_args_needed[] = {TRUE,TRUE};
+
 typedef struct {
    long n;
    long reps;
@@ -30,15 +37,7 @@ void hpck_kernel (void *args)
 
 void * hpck_initialize(int argc, char *argv[])
 {
-   hpck_print_header ("AXPY Kernel: Y=a*X+Y");
-
    args_t *args = (args_t *) malloc(sizeof(args_t));
-
-   if (argc != 3) {
-      printf("Error: parsing command line arguments.\n");
-      hpck_print_usage(argc, argv);
-      exit(EXIT_FAILURE);
-   }
 
    args->n = atoi(argv[1]);
    args->reps = atoi(argv[2]);

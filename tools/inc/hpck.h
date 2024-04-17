@@ -11,6 +11,9 @@
 #define omp_get_thread_num()  0
 #endif
 
+#define TRUE  1
+#define FALSE 0
+
 #ifndef REAL
 #define REAL double
 #endif
@@ -22,8 +25,6 @@
 void*hpck_initialize(int, char *[]);
 void hpck_kernel(void *);
 int  hpck_finalize(void *);
-
-void hpck_print_usage(int, char *[]);
 
 void hpck_print_rule(void);
 void hpck_print_header(const char*);
