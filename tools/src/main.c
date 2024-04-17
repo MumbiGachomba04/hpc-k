@@ -63,6 +63,11 @@ void __hpck_parse_arguments(void)
    }
 }
 
+char*hpck_get_arg_idx(int idx)
+{
+   return __hpck_kernel_args_values[idx];
+}
+
 void hpck_print_rule(void)
 {
    printf("================================================================\n");
@@ -116,7 +121,7 @@ int main(int argc, char *argv[])
    hpck_print_settings("Libraries", "%s", __hpck_libraries);
 
    gettimeofday(&tv1, &tz);
-   void * args = hpck_initialize(argc, argv);
+   void * args = hpck_initialize();
    gettimeofday(&tv2, &tz);
    initialize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
 

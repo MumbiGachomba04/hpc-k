@@ -22,7 +22,7 @@
 #define INTEGER long
 #endif
 
-void*hpck_initialize(int, char *[]);
+void*hpck_initialize(void);
 void hpck_kernel(void *);
 int  hpck_finalize(void *);
 
@@ -30,5 +30,7 @@ void hpck_print_rule(void);
 void hpck_print_header(const char*);
 void hpck_print_settings(const char*, const char*, ... );
 void hpck_print_results(const char*, const char*, ... );
+
+char*hpck_get_arg_idx(int);
 
 #endif

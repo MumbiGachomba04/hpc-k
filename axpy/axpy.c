@@ -16,7 +16,7 @@ char  hpck_kernel_args_needed[] = {TRUE,TRUE};
 
 typedef struct {
    long n;
-   long reps;
+   long r;
    REAL alpha;
    REAL *X;
    REAL *Y;
@@ -25,22 +25,22 @@ typedef struct {
 void hpck_kernel (void *args)
 {
    long n     = ((args_t*)args)->n;
-   long reps  = ((args_t*)args)->reps;
+   long r  = ((args_t*)args)->r;
    REAL alpha = ((args_t*)args)->alpha;
    REAL *X    = ((args_t*)args)->X;
    REAL *Y    = ((args_t*)args)->Y;
 
-   for(long r=0; r<reps; r++)
+   for(long j=0; j<r; j++)
       for(long i=0; i<n; i++)
          Y[i] = alpha*X[i]+Y[i];
 }
 
-void * hpck_initialize(int argc, char *argv[])
+void * hpck_initialize(void)
 {
    args_t *args = (args_t *) malloc(sizeof(args_t));
 
-   args->n = atoi(argv[1]);
-   args->reps = atoi(argv[2]);
+   args->n = atoi(hpck_get_arg_idx(0));
+   args->r = atoi(hpck_get_arg_idx(1));
    args->alpha = A_INIT;
 
    ////////////////////// Array X ///////////////////////////
@@ -62,7 +62,7 @@ void * hpck_initialize(int argc, char *argv[])
    }
 
    hpck_print_settings("Array size (elements)", "%ld", args->n);
-   hpck_print_settings("Repetitions", "%ld", args->reps);
+   hpck_print_settings("Repetitions", "%ld", args->r);
    hpck_print_settings("Element size (bytes)","%ld", sizeof(REAL));
    hpck_print_settings("Number of threads","%d", omp_get_max_threads());
 
@@ -72,14 +72,14 @@ void * hpck_initialize(int argc, char *argv[])
 int hpck_finalize(void *args)
 {
    long n     = ((args_t*)args)->n;
-   long reps  = ((args_t*)args)->reps;
+   long r  = ((args_t*)args)->r;
    REAL *X    = ((args_t*)args)->X;
    REAL *Y    = ((args_t*)args)->Y;
 
    double abs_err = 0.0, rel_err = 0.0;
 
    REAL expected = Y_INIT;
-   for(int i=0; i<reps; i++) expected = A_INIT*X_INIT+expected; // Algorithmic solution (sequential)
+   for(int i=0; i<r; i++) expected = A_INIT*X_INIT+expected; // Algorithmic solution (sequential)
 
    for(int i=0; i<n; i++)
          abs_err += fabs(Y[i] - expected);
