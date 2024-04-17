@@ -1,5 +1,11 @@
 #include "hpck.h"
 
+char * __hpck_compiler  __attribute__((weak)) = "n/a";
+char * __hpck_cflags    __attribute__((weak)) = "n/a";
+char * __hpck_ldflags   __attribute__((weak)) = "n/a";
+char * __hpck_includes  __attribute__((weak)) = "n/a";
+char * __hpck_libraries __attribute__((weak)) = "n/a";
+
 void __hpck_print(const char* fmt, va_list args)
 {
    vprintf(fmt, args);
@@ -52,6 +58,12 @@ int main(int argc, char *argv[])
    void * args = hpck_initialize(argc, argv);
    gettimeofday(&tv2, &tz);
    initialize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
+
+   hpck_print_settings("Compiler", "%s", __hpck_compiler);
+   hpck_print_settings("Compiler flags", "%s", __hpck_cflags);
+   hpck_print_settings("Linker flags", "%s", __hpck_ldflags);
+   hpck_print_settings("Includes", "%s", __hpck_includes);
+   hpck_print_settings("Libraries", "%s", __hpck_libraries);
 
    hpck_print_rule();
 

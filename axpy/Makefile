@@ -1,27 +1,21 @@
 PROGRAM=axpy
+include ../kernel.mk
 
-CC=gcc
-RM=rm -fr
+#CC=gcc
 
-CFLAGS=-O3 -DREAL=float -Wall
-LDFLAGS=
-INC=
-LIB=
-
-.PHONY: clean
+CFLAGS+=-DREAL=float 
+LDFLAGS+=
+INC+=
+LIB+=
 
 default: $(PROGRAM)
 
-$(PROGRAM): $(PROGRAM).o main.o
+$(PROGRAM): $(PROGRAM).o $(MAIN)
 	$(CC) $^ $(CFLAGS) $(LDFLAGS) $(LIB) -o $@ 
 
 $(PROGRAM).o: $(PROGRAM).c
-	$(CC) -c $< $(CFLAGS) $(INC) -o $@
+	$(BUILD_INIT)
+	$(CC) -c $^ $(CFLAGS) $(INC) $(BUILD_INFO) -o $@
+	$(BUILD_FINI)
 
-main.o: main.c
-	$(CC) -c $< $(CFLAGS) $(INC) -o $@
-
-clean:
-	$(RM) *.o
-	$(RM) $(PROGRAM)
 
