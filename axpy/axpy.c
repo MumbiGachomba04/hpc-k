@@ -25,7 +25,7 @@ typedef struct {
 void hpck_kernel (void *args)
 {
    long n     = ((args_t*)args)->n;
-   long r  = ((args_t*)args)->r;
+   long r     = ((args_t*)args)->r;
    REAL alpha = ((args_t*)args)->alpha;
    REAL *X    = ((args_t*)args)->X;
    REAL *Y    = ((args_t*)args)->Y;
@@ -39,7 +39,7 @@ void * hpck_initialize(void)
 {
    args_t *args = (args_t *) malloc(sizeof(args_t));
 
-   args->n = atoi(hpck_get_arg_idx(0));
+   args->n = atol(hpck_get_arg_idx(0));
    args->r = atoi(hpck_get_arg_idx(1));
    args->alpha = A_INIT;
 
@@ -56,7 +56,7 @@ void * hpck_initialize(void)
       exit(EXIT_FAILURE);
    }
    ///////////////////// Initialize /////////////////////////
-   for(int i=0; i<args->n; i++) {
+   for(long i=0; i<args->n; i++) {
       args->X[i] = X_INIT;
       args->Y[i] = Y_INIT;
    }
@@ -71,17 +71,17 @@ void * hpck_initialize(void)
 
 int hpck_finalize(void *args)
 {
-   long n     = ((args_t*)args)->n;
+   long n  = ((args_t*)args)->n;
    long r  = ((args_t*)args)->r;
-   REAL *X    = ((args_t*)args)->X;
-   REAL *Y    = ((args_t*)args)->Y;
+   REAL *X = ((args_t*)args)->X;
+   REAL *Y = ((args_t*)args)->Y;
 
    double abs_err = 0.0, rel_err = 0.0;
 
    REAL expected = Y_INIT;
    for(int i=0; i<r; i++) expected = A_INIT*X_INIT+expected; // Algorithmic solution (sequential)
 
-   for(int i=0; i<n; i++)
+   for(long i=0; i<n; i++)
          abs_err += fabs(Y[i] - expected);
 
    abs_err = abs_err / (REAL) n;
