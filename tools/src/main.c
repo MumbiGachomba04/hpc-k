@@ -1,4 +1,5 @@
 #include "hpck.h"
+#include <string.h>
 
 char * hpck_kernel_name __attribute__((weak)) = "<not defined>";
 
@@ -18,9 +19,50 @@ char * __hpck_libraries __attribute__((weak)) = "n/a";
 int    __hpck_argc = 0;
 char **__hpck_argv = NULL;
 
+#define __HPCK_STR_SIZE 64
+#define __HPCK_STR_NAME "%-30s: "
+
 void __hpck_print(const char* fmt, va_list args)
 {
    vprintf(fmt, args);
+}
+
+void __hpck_print_rule(void)
+{
+   for(int i=0; i<__HPCK_STR_SIZE;i++) printf("=");
+   printf("\n");
+}
+
+void __hpck_print_name(void)
+{
+   int i = strlen(hpck_kernel_name)+4;
+
+   printf("= %s", hpck_kernel_name);
+   while(i < __HPCK_STR_SIZE) { printf(" "); i++;}
+   printf(" =\n");
+}
+
+void __hpck_print_line(const char* name, const char *format,...)
+{
+   va_list args;
+   va_start(args,format);
+   printf(__HPCK_STR_NAME, name);
+   __hpck_print(format, args);
+   printf("\n");
+   va_end(args);
+}
+
+void __hpck_print_header ()
+{
+   __hpck_print_rule();
+   __hpck_print_name();
+
+   __hpck_print_rule(); // Build info
+   __hpck_print_line("Compiler", "%s", __hpck_compiler);
+   __hpck_print_line("Compiler flags", "%s", __hpck_cflags);
+   __hpck_print_line("Linker flags", "%s", __hpck_ldflags);
+   __hpck_print_line("Includes", "%s", __hpck_includes);
+   __hpck_print_line("Libraries", "%s", __hpck_libraries);
 }
 
 void __hpck_print_usage(void)
@@ -68,23 +110,28 @@ char*hpck_get_arg_idx(int idx)
    return __hpck_kernel_args_values[idx];
 }
 
-void hpck_print_rule(void)
+void hpck_error(const char *msg,...)
 {
-   printf("================================================================\n");
+   printf("Error: %s\n", msg);
+   exit(EXIT_FAILURE);
 }
 
-void hpck_print_header (const char* str)
+void hpck_warning(const char *msg,...)
 {
-   hpck_print_rule();
-   printf("= %-60s =\n", str);
-   hpck_print_rule();
+   printf("Warning: %s\n", msg);
 }
 
 void hpck_print_settings(const char* name, const char *format, ...)
 {
+   static char called=FALSE;
+   if (!called) {
+      __hpck_print_rule();
+      called=TRUE;
+   }
+   
    va_list args;
    va_start(args,format);
-   printf("%-30s: ",name);
+   printf(__HPCK_STR_NAME, name);
    __hpck_print(format, args);
    printf("\n");
    va_end(args);
@@ -92,9 +139,15 @@ void hpck_print_settings(const char* name, const char *format, ...)
 
 void hpck_print_results(const char* name, const char *format, ...)
 {
+   static char called=FALSE;
+   if (!called) {
+      __hpck_print_rule();
+      called=TRUE;
+   }
+
    va_list args;
    va_start(args,format);
-   printf("%-30s: ",name);
+   printf(__HPCK_STR_NAME, name);
    __hpck_print(format, args);
    printf("\n");
    va_end(args);
@@ -112,20 +165,12 @@ int main(int argc, char *argv[])
 
    __hpck_parse_arguments();
 
-   hpck_print_header(hpck_kernel_name);
-
-   hpck_print_settings("Compiler", "%s", __hpck_compiler);
-   hpck_print_settings("Compiler flags", "%s", __hpck_cflags);
-   hpck_print_settings("Linker flags", "%s", __hpck_ldflags);
-   hpck_print_settings("Includes", "%s", __hpck_includes);
-   hpck_print_settings("Libraries", "%s", __hpck_libraries);
+   __hpck_print_header();
 
    gettimeofday(&tv1, &tz);
    void * args = hpck_initialize();
    gettimeofday(&tv2, &tz);
    initialize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
-
-   hpck_print_rule();
 
    gettimeofday(&tv1, &tz);
    hpck_kernel(args);
@@ -137,15 +182,13 @@ int main(int argc, char *argv[])
    gettimeofday(&tv2, &tz);
    finalize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
 
-   hpck_print_rule();
-
-   printf("%-30s: %.3lf\n", "Initialization time (seconds)", initialize_time);
-   printf("%-30s: %.3lf\n", "Kernel compute time (seconds)", kernel_time);
-   printf("%-30s: %.3lf\n", "Kernel throughput (GFLOPs/s)", (kernel_time) / 1E+9);// TODO
-   printf("%-30s: %.3lf\n", "Finalization time (seconds)", finalize_time);
-   printf("%-30s: %s\n", "Result verification", str_result[result+1] );
-
-   hpck_print_rule();
+   __hpck_print_rule();
+   __hpck_print_line("Initialization time (seconds)", "%.3lf", initialize_time);
+   __hpck_print_line("Kernel compute time (seconds)", "%.3lf", kernel_time);
+   __hpck_print_line("Kernel throughput (GFLOPs/s)", "%.3lf", (kernel_time) / 1E+9);// TODO
+   __hpck_print_line("Finalization time (seconds)", "%.3lf", finalize_time);
+   __hpck_print_line("Result verification", "%s", str_result[result+1] );
+   __hpck_print_rule();
 
    return EXIT_SUCCESS;
 }

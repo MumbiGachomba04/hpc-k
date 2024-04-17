@@ -26,8 +26,9 @@ void*hpck_initialize(void);
 void hpck_kernel(void *);
 int  hpck_finalize(void *);
 
-void hpck_print_rule(void);
-void hpck_print_header(const char*);
+void hpck_error(const char *,...);
+void hpck_warning(const char *,...);
+
 void hpck_print_settings(const char*, const char*, ... );
 void hpck_print_results(const char*, const char*, ... );
 

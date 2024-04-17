@@ -40,22 +40,15 @@ void * hpck_initialize(void)
    args_t *args = (args_t *) malloc(sizeof(args_t));
 
    args->n = atol(hpck_get_arg_idx(0));
-   args->r = atoi(hpck_get_arg_idx(1));
+   args->r = atol(hpck_get_arg_idx(1));
    args->alpha = A_INIT;
 
-   ////////////////////// Array X ///////////////////////////
    args->X = (REAL *) malloc(args->n*sizeof(REAL));
-   if(!args->X) {
-      printf("Error: memory failed allocating Array X.\n");
-      exit(EXIT_FAILURE);
-   }
-   ////////////////////// Array Y ///////////////////////////
+   if(!args->X) hpck_error("memory failed allocating Array X",20);
+
    args->Y = (REAL *) malloc(args->n*sizeof(REAL));
-   if(!args->Y) {
-      printf("Error: memory failed allocating Array Y.\n");
-      exit(EXIT_FAILURE);
-   }
-   ///////////////////// Initialize /////////////////////////
+   if(!args->Y) hpck_error("memory failed allocating Array Y");
+
    for(long i=0; i<args->n; i++) {
       args->X[i] = X_INIT;
       args->Y[i] = Y_INIT;
@@ -81,13 +74,11 @@ int hpck_finalize(void *args)
    REAL expected = Y_INIT;
    for(int i=0; i<r; i++) expected = A_INIT*X_INIT+expected; // Algorithmic solution (sequential)
 
-   for(long i=0; i<n; i++)
-         abs_err += fabs(Y[i] - expected);
+   for(long i=0; i<n; i++) abs_err += fabs(Y[i] - expected);
 
    abs_err = abs_err / (REAL) n;
    rel_err = abs_err / expected;
 
-   ////////////////// Deallocating /////////////////////////
    free(X);
    free(Y);
 
