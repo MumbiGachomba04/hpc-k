@@ -27,6 +27,11 @@ void __hpck_print(const char* fmt, va_list args)
    vprintf(fmt, args);
 }
 
+void __hpck_error(const char* fmt, va_list args)
+{
+   vfprintf(stderr, fmt, args);
+}
+
 void __hpck_print_rule(void)
 {
    for(int i=0; i<__HPCK_STR_SIZE;i++) printf("=");
@@ -67,11 +72,12 @@ void __hpck_print_header ()
 
 void __hpck_print_usage(void)
 {
-   printf("Usage: %s [options]\n", __hpck_argv[0]);
-   printf("Where [options] are:\n");
+   fprintf(stderr,"Usage: %s [options]\n", __hpck_argv[0]);
+   fprintf(stderr,"Where [options] are:\n");
+   fprintf(stderr, "  -i <arg>'s: set of kernel arguments\n");
    if (!hpck_kernel_args_key[0]) {
       for (int i=0; i < hpck_kernel_args_count; i++) {
-         fprintf(stderr, "   <arg-%d>: %s (%s)\n",
+         fprintf(stderr, "     <arg-%d>: %s (%s)\n",
                i+1, hpck_kernel_args_desc[i], hpck_kernel_args_needed[i]?"needed":"optional");
       }
    } else {
@@ -81,28 +87,49 @@ void __hpck_print_usage(void)
 
 void __hpck_parse_arguments(void)
 {
-   int count = hpck_kernel_args_count;
+   char kernel_args = FALSE;
+   __hpck_kernel_args_values = (char **) malloc (hpck_kernel_args_count*sizeof(char *));
 
-   __hpck_kernel_args_values = (char **) malloc (count*sizeof(char *));
-
-   if (!hpck_kernel_args_key[0]) {
-      int i = 0;
-      while (i<count && (i+1)<__hpck_argc) {
-         __hpck_kernel_args_values[i] = __hpck_argv[i+1];
-         i++;
-      }
-      while (i<count) {
-         __hpck_kernel_args_values[i] = NULL;
-         if (hpck_kernel_args_needed[i]) {
-            __hpck_print_usage();
-            printf("Error: Argument <arg-%d> needed and not provided.\n",i+1);
-            exit(EXIT_FAILURE);
+   for(int i=1; i<__hpck_argc; ) {
+      if (__hpck_argv[i][0] == '-') {
+         switch (__hpck_argv[i][1]) {
+            case 'i': i++;
+                      int j=i,k=0;
+                      while (j < __hpck_argc && __hpck_argv[j][0] != '-' && (j-i) < hpck_kernel_args_count) j++;
+                      if (!hpck_kernel_args_key[0]) {
+                         while (i<j) {
+                            __hpck_kernel_args_values[k] = __hpck_argv[i];
+                            i++;k++;
+                         }
+                         while (k<hpck_kernel_args_count) {
+                            __hpck_kernel_args_values[k] = NULL;
+                            if (hpck_kernel_args_needed[k]) {
+                               __hpck_print_usage();
+                               hpck_error("Argument <arg-%d> needed and not provided.",k+1);
+                            }
+                            k++;
+                         }
+                      } else {
+                         // TODO: named arguments
+                      }
+                      kernel_args = TRUE;
+                      break;
+            default:
+                      __hpck_print_usage();
+                      hpck_error("Option '-%c' not recognized", __hpck_argv[i][1]);
          }
-         i++;
+      } else {
+         __hpck_print_usage();
+         hpck_error("Option '%s' not recognized", __hpck_argv[i]);
       }
-   } else {
-      // TODO: named arguments
+      
    }
+
+   if (!kernel_args) {
+      __hpck_print_usage();
+      hpck_error("Kernel arguments needed and not provided.");
+   }
+
 }
 
 char*hpck_get_arg_idx(int idx)
@@ -112,7 +139,12 @@ char*hpck_get_arg_idx(int idx)
 
 void hpck_error(const char *msg,...)
 {
-   printf("Error: %s\n", msg);
+   va_list args;
+   va_start(args,msg);
+   fprintf(stderr,"Error: ");
+   __hpck_error(msg,args);
+   fprintf(stderr,"\n");
+   va_end(args);
    exit(EXIT_FAILURE);
 }
 
