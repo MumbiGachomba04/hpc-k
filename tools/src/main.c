@@ -73,6 +73,16 @@ void __hpck_print_header ()
    __hpck_print_line("Libraries", "%s", __hpck_libraries);
 }
 
+void __hpck_print_version(void)
+{
+    fprintf(stderr, "Kernel %s \"%s\"; from the HPC-K suite v%d.%d%s\n",
+             __hpck_argv[0], hpck_kernel_name,
+            HPCK_VERSION_MAJOR, HPCK_VERSION_MINOR, HPCK_VERSION_ALPHA?"a":"");
+    fprintf(stderr, "This is free software; see the source code for copying conditions (LICENSE file).\n");
+    fprintf(stderr, "There is NO WARRANTY; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
+
+}
+
 void __hpck_print_usage(void)
 {
    fprintf(stderr,"Usage: %s [options]\n", __hpck_argv[0]);
@@ -84,6 +94,7 @@ void __hpck_print_usage(void)
          fprintf(stderr, __HPCK_USAGE_ARG_ID,
                i+1, hpck_kernel_args_desc[i], hpck_kernel_args_needed[i]?"needed":"optional");
       }
+   fprintf(stderr, __HPCK_USAGE_OPT, "-v", "Display the program version (and exit)");
    } else {
       // TODO: named arguments
    }
@@ -121,6 +132,9 @@ void __hpck_parse_arguments(void)
                       }
                       kernel_args = TRUE;
                       break;
+            case 'v': i++;
+                      __hpck_print_version();
+                      exit(EXIT_SUCCESS);
             default:
                       __hpck_print_usage();
                       hpck_error("Option '-%c' not recognized", __hpck_argv[i][1]);

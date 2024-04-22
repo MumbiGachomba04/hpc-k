@@ -5,6 +5,10 @@
 #include <sys/time.h>
 #include <stdarg.h>
 
+#define HPCK_VERSION_MAJOR 0
+#define HPCK_VERSION_MINOR 1
+#define HPCK_VERSION_ALPHA 1
+
 #ifndef _OPENMP
 #define omp_get_max_threads() 1
 #define omp_get_num_threads() 1
