@@ -22,6 +22,9 @@ char **__hpck_argv = NULL;
 #define __HPCK_STR_SIZE 64
 #define __HPCK_STR_NAME "%-30s: "
 
+#define __HPCK_USAGE_OPT      "  %-12s %s\n"
+#define __HPCK_USAGE_ARG_ID   "     <arg-%d>   %s (%s)\n"
+
 void __hpck_print(const char* fmt, va_list args)
 {
    vprintf(fmt, args);
@@ -74,10 +77,11 @@ void __hpck_print_usage(void)
 {
    fprintf(stderr,"Usage: %s [options]\n", __hpck_argv[0]);
    fprintf(stderr,"Where [options] are:\n");
-   fprintf(stderr, "  -i <arg>'s: set of kernel arguments\n");
+   fprintf(stderr, __HPCK_USAGE_OPT, "-h", "Display this information (and exit)");
+   fprintf(stderr, __HPCK_USAGE_OPT, "-i <args>","Set kernel arguments, where:");
    if (!hpck_kernel_args_key[0]) {
       for (int i=0; i < hpck_kernel_args_count; i++) {
-         fprintf(stderr, "     <arg-%d>: %s (%s)\n",
+         fprintf(stderr, __HPCK_USAGE_ARG_ID,
                i+1, hpck_kernel_args_desc[i], hpck_kernel_args_needed[i]?"needed":"optional");
       }
    } else {
@@ -93,6 +97,9 @@ void __hpck_parse_arguments(void)
    for(int i=1; i<__hpck_argc; ) {
       if (__hpck_argv[i][0] == '-') {
          switch (__hpck_argv[i][1]) {
+            case 'h': i++;
+                      __hpck_print_usage();
+                      exit(EXIT_SUCCESS);
             case 'i': i++;
                       int j=i,k=0;
                       while (j < __hpck_argc && __hpck_argv[j][0] != '-' && (j-i) < hpck_kernel_args_count) j++;
@@ -105,7 +112,7 @@ void __hpck_parse_arguments(void)
                             __hpck_kernel_args_values[k] = NULL;
                             if (hpck_kernel_args_needed[k]) {
                                __hpck_print_usage();
-                               hpck_error("Argument <arg-%d> needed and not provided.",k+1);
+                               hpck_error("In kernel arguments (-i); <arg-%d> needed and not provided.",k+1);
                             }
                             k++;
                          }
