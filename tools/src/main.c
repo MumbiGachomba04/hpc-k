@@ -7,6 +7,7 @@ extern char  hpck_kernel_args_count;
 extern char* hpck_kernel_args_key[];
 extern char* hpck_kernel_args_desc[];
 extern char  hpck_kernel_args_needed[];
+extern char* hpck_kernel_args_default[];
 
 char ** __hpck_kernel_args_values = NULL;
 
@@ -23,7 +24,7 @@ char **__hpck_argv = NULL;
 #define __HPCK_STR_NAME "%-30s: "
 
 #define __HPCK_USAGE_OPT      "  %-12s %s\n"
-#define __HPCK_USAGE_ARG_ID   "     <arg-%d>   %s (%s)\n"
+#define __HPCK_USAGE_ARG_ID   "     <arg-%d>   %s (default=%s)\n"
 
 void __hpck_print(const char* fmt, va_list args)
 {
@@ -88,11 +89,12 @@ void __hpck_print_usage(void)
    fprintf(stderr,"Usage: %s [options]\n", __hpck_argv[0]);
    fprintf(stderr,"Where [options] are:\n");
    fprintf(stderr, __HPCK_USAGE_OPT, "-h", "Display this information (and exit)");
-   fprintf(stderr, __HPCK_USAGE_OPT, "-i <args>","Set kernel arguments, where:");
+   fprintf(stderr, __HPCK_USAGE_OPT, "-i <args>","Set kernel input arguments, where:");
    if (!hpck_kernel_args_key[0]) {
       for (int i=0; i < hpck_kernel_args_count; i++) {
          fprintf(stderr, __HPCK_USAGE_ARG_ID,
-               i+1, hpck_kernel_args_desc[i], hpck_kernel_args_needed[i]?"needed":"optional");
+               i+1, hpck_kernel_args_desc[i],
+               hpck_kernel_args_needed[i]?"none":hpck_kernel_args_default[i]);
       }
    fprintf(stderr, __HPCK_USAGE_OPT, "-v", "Display the program version (and exit)");
    } else {
@@ -120,10 +122,11 @@ void __hpck_parse_arguments(void)
                             i++;k++;
                          }
                          while (k<hpck_kernel_args_count) {
-                            __hpck_kernel_args_values[k] = NULL;
                             if (hpck_kernel_args_needed[k]) {
                                __hpck_print_usage();
                                hpck_error("In kernel arguments (-i); <arg-%d> needed and not provided.",k+1);
+                            } else {
+                               __hpck_kernel_args_values[k] = hpck_kernel_args_default[k];
                             }
                             k++;
                          }
@@ -147,8 +150,16 @@ void __hpck_parse_arguments(void)
    }
 
    if (!kernel_args) {
-      __hpck_print_usage();
-      hpck_error("Kernel arguments needed and not provided.");
+      int k=0;
+      while (k<hpck_kernel_args_count) {
+         if (hpck_kernel_args_needed[k]) {
+            __hpck_print_usage();
+            hpck_error("In kernel arguments (-i); <arg-%d> needed and not provided.",k+1);
+         } else {
+            __hpck_kernel_args_values[k] = hpck_kernel_args_default[k];
+         }
+         k++;
+      }
    }
 
 }

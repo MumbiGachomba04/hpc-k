@@ -12,7 +12,8 @@ char *hpck_kernel_name="AXPY Kernel: Y=a*X+Y";
 char  hpck_kernel_args_count = 2;
 char *hpck_kernel_args_key[] = {NULL};
 char *hpck_kernel_args_desc[] = {"Array size","Repetitions"};
-char  hpck_kernel_args_needed[] = {TRUE,TRUE};
+char  hpck_kernel_args_needed[] = {FALSE,FALSE};
+char *hpck_kernel_args_default[] = {"134217728","100"};
 
 typedef struct {
    long n;
