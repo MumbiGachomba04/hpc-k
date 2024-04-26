@@ -1,4 +1,4 @@
-include ../kernel.mk
+include $(dir $(lastword $(MAKEFILE_LIST)))../kernel.mk
 
 #CC=gcc
 
