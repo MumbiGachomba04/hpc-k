@@ -20,11 +20,16 @@ char * __hpck_libraries __attribute__((weak)) = "n/a";
 int    __hpck_argc = 0;
 char **__hpck_argv = NULL;
 
+long __hpck_flops = 0;
+long __hpck_iops= 0;
+
 #define __HPCK_STR_SIZE 64
 #define __HPCK_STR_NAME "%-30s: "
 
 #define __HPCK_USAGE_OPT      "  %-12s %s\n"
 #define __HPCK_USAGE_ARG_ID   "     <arg-%d>   %s (default=%s)\n"
+
+#define __HPCK_OPS_IS_UNIT 1E+9
 
 void __hpck_print(const char* fmt, va_list args)
 {
@@ -217,6 +222,16 @@ void hpck_print_results(const char* name, const char *format, ...)
    va_end(args);
 }
 
+void hpck_set_flops(long flops)
+{
+   __hpck_flops = flops;
+}
+
+void hpck_set_iops(long iops)
+{
+   __hpck_iops = iops;
+}
+
 int main(int argc, char *argv[])
 {
    __hpck_argc = argc;
@@ -249,7 +264,10 @@ int main(int argc, char *argv[])
    __hpck_print_rule();
    __hpck_print_line("Initialization time (seconds)", "%.3lf", initialize_time);
    __hpck_print_line("Kernel compute time (seconds)", "%.3lf", kernel_time);
-   __hpck_print_line("Kernel throughput (GFLOPs/s)", "%.3lf", (kernel_time) / 1E+9);// TODO
+   if (__hpck_flops)
+      __hpck_print_line("Kernel throughput (GFLOPs/s)", "%.3lf", ((__hpck_flops)/(kernel_time)) / __HPCK_OPS_IS_UNIT);
+   if (__hpck_iops)
+      __hpck_print_line("Kernel throughput (GIOPs/s)", "%.3lf", ((__hpck_iops)/(kernel_time)) / __HPCK_OPS_IS_UNIT);
    __hpck_print_line("Finalization time (seconds)", "%.3lf", finalize_time);
    __hpck_print_line("Result verification", "%s", str_result[result+1] );
    __hpck_print_rule();

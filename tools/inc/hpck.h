@@ -38,4 +38,7 @@ void hpck_print_results(const char*, const char*, ... );
 
 char*hpck_get_arg_idx(int);
 
+void hpck_set_flops(long);
+void hpck_set_iops(long);
+
 #endif

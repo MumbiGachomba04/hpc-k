@@ -60,6 +60,8 @@ void * hpck_initialize(void)
    hpck_print_settings("Element size (bytes)","%ld", sizeof(REAL));
    hpck_print_settings("Number of threads","%d", omp_get_max_threads());
 
+   hpck_set_flops(2*(args->n)*(args->r));
+
    return (void *) args;
 }
 
