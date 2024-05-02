@@ -1,15 +1,15 @@
 .PHONY: test clean
 
 $(HPCK_PROGRAM): $(HPCK_PROGRAM).o $(MAIN)
-	$(CC) $^ $(CFLAGS) $(LDFLAGS) $(LIB) -o $@ 
+	@$(HPCK_BUILD) $(CC) $^ $(CFLAGS) $(LDFLAGS) $(LIB) -o $@ 
 
 $(HPCK_PROGRAM).o: $(HPCK_PROGRAM).c
 	$(BUILD_INIT)
-	$(CC) -c $^ $(CFLAGS) $(INC) $(BUILD_INFO) -o $@
+	@$(HPCK_BUILD) $(CC) -c $^ $(CFLAGS) $(INC) $(BUILD_INFO) -o $@
 	$(BUILD_FINI)
 
 $(MAIN): ../tools/src/main.c
-	$(CC) -c $< $(CFLAGS) $(INC) -o $@
+	@$(HPCK_BUILD) $(CC) -c $< $(CFLAGS) $(INC) -o $@
 
 test:
 	@$(ECHO) Suite root dir.... $(HPCK_DIR)
