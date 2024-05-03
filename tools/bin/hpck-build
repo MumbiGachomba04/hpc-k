@@ -1,3 +1,18 @@
 #!/bin/bash
-echo $*
-$*
+command=( "$*" )
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -o)
+      TARGET="$2"
+      shift
+      shift
+      ;;
+    *)
+      shift
+  esac
+done
+
+echo Building $TARGET
+
+$command

@@ -1,14 +1,31 @@
-.PHONY: test clean
+.PHONY: test clean build
 
-$(HPCK_PROGRAM): $(HPCK_PROGRAM).o $(MAIN)
+PROGRAM_O=$(HPCK_PROGRAM).o
+PROGRAM_C=$(HPCK_PROGRAM).c
+
+MAIN_FILE_C=../tools/src/main.c
+MAIN_FILE_O=main.o
+
+BUILD_FILE_C=build.c
+BUILD_FILE_O=build.o
+
+OBJECTS=$(PROGRAM_O) $(MAIN_FILE_O) $(BUILD_FILE_O)
+
+$(HPCK_PROGRAM): $(OBJECTS)
 	@$(HPCK_BUILD) $(CC) $^ $(CFLAGS) $(LDFLAGS) $(LIB) -o $@ 
 
-$(HPCK_PROGRAM).o: $(HPCK_PROGRAM).c
-	$(BUILD_INIT)
-	@$(HPCK_BUILD) $(CC) -c $^ $(CFLAGS) $(INC) $(BUILD_INFO) -o $@
-	$(BUILD_FINI)
+$(PROGRAM_O): $(PROGRAM_C) Makefile $(HPCK_DIR)/kernel.mk
+	@$(HPCK_BUILD) $(CC) -c $< $(CFLAGS) $(INC) -o $@
 
-$(MAIN): ../tools/src/main.c
+$(BUILD_FILE_O): $(PROGRAM_O)
+	@$(ECHO) char \* __hpck_compiler=\"$(CC)\"\;      > $(BUILD_FILE_C);
+	@$(ECHO) char \* __hpck_cflags=\"$(CFLAGS)\"\;   >> $(BUILD_FILE_C);
+	@$(ECHO) char \* __hpck_ldflags=\"$(LDFLAGS)\"\; >> $(BUILD_FILE_C);
+	@$(ECHO) char \* __hpck_includes=\"$(INC)\"\;    >> $(BUILD_FILE_C);
+	@$(ECHO) char \* __hpck_libraries=\"$(LIB)\"\;   >> $(BUILD_FILE_C); 
+	@$(HPCK_BUILD) $(CC) -c $(BUILD_FILE_C) $(CFLAGS) $(INC) -o $@
+
+$(MAIN_FILE_O): $(MAIN_FILE_C)
 	@$(HPCK_BUILD) $(CC) -c $< $(CFLAGS) $(INC) -o $@
 
 test:
@@ -22,8 +39,8 @@ test:
 	@$(ECHO) Includes.......... $(INC)
 	@$(ECHO) Libraries......... $(LIB)
 
-
 clean:
-	$(RM) *.o
+	$(RM) $(OBJECTS)
 	$(RM) $(HPCK_PROGRAM)
+	$(RM) $(BUILD_FILE_C)
 
