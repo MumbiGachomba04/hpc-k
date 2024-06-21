@@ -32,11 +32,11 @@
 void MatMul (int n, int ts, REAL **a, REAL **b, REAL **c) // IKJ
 {
    int ii, jj, kk, i, j, k;
-
+#pragma omp parallel for private(ii, kk, jj, i, j, k) schedule(dynamic)
    for(ii=0; ii<n; ii+=ts)
       for(kk=0; kk<n; kk+=ts)
          for(jj=0; jj<n; jj+=ts)
-            #pragma omp task firstprivate(ii, jj, kk) private(i, j, k) \
+            #pragma omp task firstprivate(ii, jj, kk)  \
             depend(in: a[ii:ts][k:ts], b[kk:ts][jj:ts]) \
             depend(inout: c[ii:ts][jj:ts])          
             for(i=0; i<ts; i++)
@@ -88,28 +88,29 @@ int main(int argc, char *argv[])
    ///////////////////// Matrix A //////////////////////////
    gettimeofday(&tv1, &tz);
    A = (REAL **) malloc(n*sizeof(REAL *));
-   A[0] = (REAL *) malloc(n*n*sizeof(REAL));
+   for(i=0; i<n; i++) A[i] = (REAL *) malloc(n*sizeof(REAL));
    if(!A || !A[0]) {
       printf("Error: memory failed allocating Matrix A.\n");
       exit(EXIT_FAILURE);
    }
-   for(i=1; i<n; i++) A[i] = A[0]+i*n;
+   //for(i=1; i<n; i++) A[i] = A[0]+i*n;
    ///////////////////// Matrix B //////////////////////////
    B = (REAL **) malloc(n*sizeof(REAL *));
-   B[0] = (REAL *) malloc(n*n*sizeof(REAL));
+   for(i=0; i<n; i++)  B[i] = (REAL *) malloc(n*sizeof(REAL));
    if(!B || !B[0]) {
       printf("Error: memory failed allocating Matrix B.\n");
       exit(EXIT_FAILURE);
    }
-   for(i=1; i<n; i++) B[i] = B[0]+i*n;
+   //for(i=1; i<n; i++) B[i] = B[0]+i*n;
    ///////////////////// Matrix C //////////////////////////
    C = (REAL **) malloc(n*sizeof(REAL *));
-   C[0] = (REAL *) malloc(n*n*sizeof(REAL));
+   for(i=0; i<n; i++) 
+       C[i] = (REAL *) malloc(n*sizeof(REAL));
    if(!C || !C[0]) {
       printf("Error: memory failed allocating Matrix C.\n");
       exit(EXIT_FAILURE);
    }
-   for(i=1; i<n; i++) C[i] = C[0]+i*n;
+   //for(i=1; i<n; i++) C[i] = C[0]+i*n;
    /////////////////// Initializing ////////////////////////
    for(i=0; i<n; i++)
       for(j=0; j<n; j++) {
@@ -121,8 +122,6 @@ int main(int argc, char *argv[])
    initialize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
    ////////////////// Matrix Multiply //////////////////////
    gettimeofday(&tv1, &tz);
-   #pragma omp parallel
-   #pragma omp single
    MatMul(n,ts,A,B,C);
    gettimeofday(&tv2, &tz);
    kernel_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
@@ -146,9 +145,16 @@ int main(int argc, char *argv[])
    rel_err = abs_err / expected;
 
    ////////////////// Deallocating /////////////////////////
-   free(A[0]); free(A);
-   free(B[0]); free(B);
-   free(C[0]); free(C);
+   for(i=0; i<n; i++) {
+         free(A[i]); 
+         free(B[i]); 
+         free(C[i]);
+   }
+   
+
+   free(A);
+   free(B);
+   free(C);
    gettimeofday(&tv2, &tz);
    finalize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
    ////////////////// Print results ////////////////////////

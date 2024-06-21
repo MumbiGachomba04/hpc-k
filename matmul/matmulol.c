@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <math.h>
+#include  <omp.h> 
 
 #ifndef _OPENMP
 #define omp_get_max_threads() 1
@@ -28,23 +29,48 @@
 #  define EPSILON 1E-3
 #endif
 
-void MatMul (int n, int ts, REAL **a, REAL **b, REAL **c) // IKJ
+void copy_to_contiguous(REAL **src, REAL *dst, int n) {
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            dst[i * n + j] = src[i][j];
+        }
+    }
+}
+
+void copy_from_contiguous(REAL *src, REAL **dst, int n) {
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            dst[i][j] = src[i * n + j];
+        }
+    }
+}
+
+void MatMul(int n, int ts, REAL **a, REAL **b, REAL **c) // IKJ
 {
-   
-   int ii, jj, kk, i, j, k;
-   #pragma omp target enter data map(to: a[0:n][0:n], b[0:n][0:n]) map(alloc: c[0:n][0:n])
-   #pragma omp target teams distribute parallel for collapse(4)
-   for(ii=0; ii<n; ii+=ts)
-      for(kk=0; kk<n; kk+=ts)
-         for(jj=0; jj<n; jj+=ts)
-            for(i=0; i<ts; i++)
-               for(k=0; k<ts; k++) 
-               #pragma omp simd
-                  for(j=0; j<ts; j++)
-                     c[ii+i][jj+j] += a[ii+i][kk+k] * b[kk+k][jj+j];
+    int ii, jj, kk, i, j, k;
 
-  #pragma omp target exit data map(delete: a[0:n][0:n], b[0:n][0:n], c[0:n][0:n])
+    
+    REAL *a_contig = (REAL *)malloc(n * n * sizeof(REAL));
+    REAL *b_contig = (REAL *)malloc(n * n * sizeof(REAL));
+    REAL *c_contig = (REAL *)malloc(n * n * sizeof(REAL));
 
+    copy_to_contiguous(a, a_contig, n);
+    copy_to_contiguous(b, b_contig, n);
+
+    #pragma omp target teams distribute parallel for collapse(2) map(to: a_contig[0:n*n], b_contig[0:n*n]) map(from: c_contig[0:n*n])
+    for (ii = 0; ii < n; ii += ts)
+        for (kk = 0; kk < n; kk += ts)
+            for (jj = 0; jj < n; jj += ts)
+                for (i = 0; i < ts; i++)
+                    for (k = 0; k < ts; k++)
+                        for (j = 0; j < ts; j++)
+                            c_contig[(ii + i) * n + (jj + j)] += a_contig[(ii + i) * n + (kk + k)] * b_contig[(kk + k) * n + (jj + j)];
+
+    copy_from_contiguous(c_contig, c, n);
+
+    free(a_contig);
+    free(b_contig);
+    free(c_contig);
 }
 
 void usage(int argc, char *argv[]){
@@ -89,28 +115,29 @@ int main(int argc, char *argv[])
    ///////////////////// Matrix A //////////////////////////
    gettimeofday(&tv1, &tz);
    A = (REAL **) malloc(n*sizeof(REAL *));
-   A[0] = (REAL *) malloc(n*n*sizeof(REAL));
+   for(i=0; i<n; i++) A[i] = (REAL *) malloc(n*sizeof(REAL));
    if(!A || !A[0]) {
       printf("Error: memory failed allocating Matrix A.\n");
       exit(EXIT_FAILURE);
    }
-   for(i=1; i<n; i++) A[i] = A[0]+i*n;
+   //for(i=1; i<n; i++) A[i] = A[0]+i*n;
    ///////////////////// Matrix B //////////////////////////
    B = (REAL **) malloc(n*sizeof(REAL *));
-   B[0] = (REAL *) malloc(n*n*sizeof(REAL));
+   for(i=0; i<n; i++)  B[i] = (REAL *) malloc(n*sizeof(REAL));
    if(!B || !B[0]) {
       printf("Error: memory failed allocating Matrix B.\n");
       exit(EXIT_FAILURE);
    }
-   for(i=1; i<n; i++) B[i] = B[0]+i*n;
+   //for(i=1; i<n; i++) B[i] = B[0]+i*n;
    ///////////////////// Matrix C //////////////////////////
    C = (REAL **) malloc(n*sizeof(REAL *));
-   C[0] = (REAL *) malloc(n*n*sizeof(REAL));
+   for(i=0; i<n; i++) 
+       C[i] = (REAL *) malloc(n*sizeof(REAL));
    if(!C || !C[0]) {
       printf("Error: memory failed allocating Matrix C.\n");
       exit(EXIT_FAILURE);
    }
-   for(i=1; i<n; i++) C[i] = C[0]+i*n;
+   //for(i=1; i<n; i++) C[i] = C[0]+i*n;
    /////////////////// Initializing ////////////////////////
    for(i=0; i<n; i++)
       for(j=0; j<n; j++) {
@@ -145,9 +172,16 @@ int main(int argc, char *argv[])
    rel_err = abs_err / expected;
 
    ////////////////// Deallocating /////////////////////////
-   free(A[0]); free(A);
-   free(B[0]); free(B);
-   free(C[0]); free(C);
+   for(i=0; i<n; i++) {
+         free(A[i]); 
+         free(B[i]); 
+         free(C[i]);
+   }
+   
+
+   free(A);
+   free(B);
+   free(C);
    gettimeofday(&tv2, &tz);
    finalize_time = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
    ////////////////// Print results ////////////////////////
