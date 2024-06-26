@@ -28,16 +28,6 @@ For the worksharing and tasksharing constructs , the choice of tile size greatly
 ![Throughput](tstp.png)
 
 
-## Offloading
-
-![Timing](oltime.png)
-
-
-![Scaling](ollog.png)
-
-
-![Throughput](oltp.png)
-
 
 ## Tasksharing with omp single
 
@@ -49,13 +39,3 @@ For the worksharing and tasksharing constructs , the choice of tile size greatly
 
 ![Throughput](tasktp.png)
 
-
-## OMP offloading using flat arrays 
-
-![Timing](flattime.png)
-
-
-![Scaling](flatlog.png)
-
-
-![Throughput](flattp.png)
